@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Skittle Clicker</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: linear-gradient(#2b0a3d, #120018);
+      color: white;
+    }
+
+    .skittle {
+      width: 180px;
+      cursor: pointer;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🍬 Skittle Clicker</h1>
+
+<img src="skittle.png.png" class="skittle" onclick="clickSkittle()">
+
+<p>
+Skittles: <span id="skittles">0</span><br>
+CPS: <span id="cps">0</span><br>
+Click: <span id="clickPower">1</span><br>
+Crit: <span id="critChance">10</span>%
+</p>
+
+<button onclick="buyClick()">+1 Click (<span id="clickCost">10</span>)</button><br>
+<button onclick="buyClick2()">+5 Click (<span id="click2Cost">80</span>)</button><br>
+
+<button onclick="buyCursor()">+1 CPS (<span id="cursorCost">25</span>)</button><br>
+<button onclick="buyFactory()">+10 CPS (<span id="factoryCost">200</span>)</button><br>
+<button onclick="buyWizard()">+50 CPS (<span id="wizardCost">800</span>)</button><br>
+
+<button onclick="buySuper()">+25 CPS (<span id="superCost">500</span>)</button><br>
+<button onclick="buyLuck()">+2% Crit (<span id="luckCost">1000</span>)</button><br>
+
+<button onclick="saveGame()">Save</button>
+
+<p id="msg"></p>
+
+<script>
+
+/* ---------- VARIABLES ---------- */
+let skittles = 0;
+let clickPower = 1;
+
+let cursors = 0;
+let factories = 0;
+let wizards = 0;
+let superUnits = 0;
+
+let critChance = 0.1;
+
+/* ---------- COSTS ---------- */
+let clickCost = 10;
+let click2Cost = 80;
+let cursorCost = 25;
+let factoryCost = 200;
+let wizardCost = 800;
+let superCost = 500;
+let luckCost = 1000;
+
+/* ---------- CPS ---------- */
+function getCPS() {
+  return cursors + (factories * 10) + (wizards * 50) + (superUnits * 25);
+}
+
+/* ---------- CLICK ---------- */
+function clickSkittle() {
+  let multiplier = 1;
+
+  if (Math.random() < critChance) {
+    let r = Math.random();
+
+    if (r < 0.001) {
+      multiplier = 10;
+      msg("💥 MAX OUTPUT x10");
+    } else if (r < 0.01) {
+      multiplier = 9;
+      msg("🔥 Overload x9");
+    } else if (r < 0.03) {
+      multiplier = 8;
+      msg("⚡ Surge x8");
+    } else if (r < 0.10) {
+      multiplier = 7;
+      msg("🔥 Boost x7");
+    } else if (r < 0.20) {
+      multiplier = 6;
+      msg("⚙ Boost x6");
+    } else if (r < 0.35) {
+      multiplier = 5;
+      msg("⚙ Boost x5");
+    } else if (r < 0.55) {
+      multiplier = 4;
+      msg("⚙ Small glitch x4");
+    } else if (r < 0.75) {
+      multiplier = 3;
+      msg("⚙ Minor glitch x3");
+    } else {
+      multiplier = 2;
+      msg("⚠ Factory error");
+    }
+  }
+
+  skittles += clickPower * multiplier;
+  update();
+}
+
+/* ---------- UPGRADES ---------- */
+function buyClick() {
+  if (skittles >= clickCost) {
+    skittles -= clickCost;
+    clickPower++;
+    clickCost = Math.floor(clickCost * 1.3);
+  }
+}
+
+function buyClick2() {
+  if (skittles >= click2Cost) {
+    skittles -= click2Cost;
+    clickPower += 5;
+    click2Cost = Math.floor(click2Cost * 1.35);
+  }
+}
+
+function buyCursor() {
+  if (skittles >= cursorCost) {
+    skittles -= cursorCost;
+    cursors++;
+    cursorCost = Math.floor(cursorCost * 1.4);
+  }
+}
+
+function buyFactory() {
+  if (skittles >= factoryCost) {
+    skittles -= factoryCost;
+    factories++;
+    factoryCost = Math.floor(factoryCost * 1.5);
+  }
+}
+
+function buyWizard() {
+  if (skittles >= wizardCost) {
+    skittles -= wizardCost;
+    wizards++;
+    wizardCost = Math.floor(wizardCost * 1.6);
+  }
+}
+
+function buySuper() {
+  if (skittles >= superCost) {
+    skittles -= superCost;
+    superUnits++;
+    superCost = Math.floor(superCost * 1.5);
+  }
+}
+
+function buyLuck() {
+  if (skittles >= luckCost) {
+    skittles -= luckCost;
+    critChance += 0.02;
+    luckCost = Math.floor(luckCost * 1.7);
+  }
+}
+
+/* ---------- GAME LOOP ---------- */
+let lastTime = Date.now();
+
+function loop() {
+  let now = Date.now();
+  let delta = (now - lastTime) / 1000;
+  lastTime = now;
+
+  skittles += getCPS() * delta;
+
+  update();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- SAVE ---------- */
+function saveGame() {
+  localStorage.setItem("save", JSON.stringify({
+    skittles, clickPower, cursors, factories, wizards, superUnits,
+    critChance,
+    clickCost, click2Cost, cursorCost, factoryCost, wizardCost, superCost, luckCost
+  }));
+}
+
+/* ---------- LOAD ---------- */
+function loadGame() {
+  let data = JSON.parse(localStorage.getItem("save"));
+  if (!data) return;
+
+  skittles = data.skittles || 0;
+  clickPower = data.clickPower || 1;
+  cursors = data.cursors || 0;
+  factories = data.factories || 0;
+  wizards = data.wizards || 0;
+  superUnits = data.superUnits || 0;
+
+  critChance = data.critChance || 0.1;
+
+  clickCost = data.clickCost || 10;
+  click2Cost = data.click2Cost || 80;
+  cursorCost = data.cursorCost || 25;
+  factoryCost = data.factoryCost || 200;
+  wizardCost = data.wizardCost || 800;
+  superCost = data.superCost || 500;
+  luckCost = data.luckCost || 1000;
+}
+
+/* ---------- UI ---------- */
+function update() {
+  document.getElementById("skittles").innerText = Math.floor(skittles);
+  document.getElementById("cps").innerText = Math.floor(getCPS());
+  document.getElementById("clickPower").innerText = clickPower;
+  document.getElementById("critChance").innerText = Math.floor(critChance * 100);
+
+  document.getElementById("clickCost").innerText = clickCost;
+  document.getElementById("click2Cost").innerText = click2Cost;
+  document.getElementById("cursorCost").innerText = cursorCost;
+  document.getElementById("factoryCost").innerText = factoryCost;
+  document.getElementById("wizardCost").innerText = wizardCost;
+  document.getElementById("superCost").innerText = superCost;
+  document.getElementById("luckCost").innerText = luckCost;
+}
+
+function msg(t) {
+  document.getElementById("msg").innerText = t;
+}
+
+/* ---------- START ---------- */
+loadGame();
+update();
+loop();
+setInterval(saveGame, 5000);
+
+</script>
+
+</body>
+</html>
